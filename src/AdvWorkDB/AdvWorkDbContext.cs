@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AdvWorkDB
 {
+    #pragma warning disable CS8618
     public partial class AdvWorkDbContext : DbContext
     {
         public AdvWorkDbContext()
@@ -14,6 +15,7 @@ namespace AdvWorkDB
         {
         }
 
+        #region Read-Only
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
             => throw new NotSupportedException("This DbContext is read-only.");
@@ -21,6 +23,7 @@ namespace AdvWorkDB
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
             => throw new NotSupportedException("This DbContext is read-only.");
 
+        #endregion
 
         #region Entities
 
@@ -119,13 +122,20 @@ namespace AdvWorkDB
         // Unable to generate entity type for table 'Production.Document' since its primary key could not be scaffolded. Please see the warning messages.
         // Unable to generate entity type for table 'Production.ProductDocument' since its primary key could not be scaffolded. Please see the warning messages.
 
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //{
-        //    if (!optionsBuilder.IsConfigured)
-        //    {
-        //        optionsBuilder.UseSqlServer("Name=ConnectionStrings:Default");
-        //    }
-        //}
+        #region Configuring Context
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Name=ConnectionStrings:Default");
+                // read-only DBContext
+                optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+                optionsBuilder.EnableSensitiveDataLogging(false);
+            }
+        }
+
+        #endregion
 
         #region Entity Configuration
 
@@ -4331,4 +4341,5 @@ namespace AdvWorkDB
 
         #endregion
     }
+    #pragma warning restore CS8618
 }

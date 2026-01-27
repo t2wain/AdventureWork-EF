@@ -15,14 +15,18 @@ namespace AdvWorkTest
         {
             _host = Program.BuildHost();
             _dbfact = _host.Services.GetRequiredService<IDbContextFactory<AdvWorkDbContext>>();
+            Repo = _host.Services.GetRequiredService<AdvWorkRepo>();
         }
 
         public AdvWorkDbContext NewDB() => _dbfact.CreateDbContext();
+
+        public AdvWorkRepo Repo { get; protected set; }
 
         public void Dispose()
         {
             _host.Dispose();
             _host = null!;
+            Repo = null!;
         }
     }
 }
