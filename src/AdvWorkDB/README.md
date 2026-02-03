@@ -9,18 +9,47 @@ Many of the configuration API are extension methods within these assemblies. Use
 **Independent of database providers**:
 
 - Assembly : Microsoft.EntityFrameworkCore.Relational
-	- Class : Microsoft.EntityFrameworkCore.RelationalEntityTypeBuilderExtensions
+	- Microsoft.EntityFrameworkCore.RelationalEntityTypeBuilderExtensions
+	- Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions
+	- Microsoft.EntityFrameworkCore.RelationalQueryableExtensions
+	- and many more ....
 
 - Assembly : Microsoft.EntityFrameworkCore
-	- Class : Microsoft.EntityFrameworkCore.DbContextOptionsBuilder
+	- Microsoft.EntityFrameworkCore.DbContextOptionsBuilder
+	- Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
+	- Microsoft.EntityFrameworkCore.ModelBuilder
+	- Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder\<TEntity>
+	- Microsoft.EntityFrameworkCore.Metadata.Builders.ReferenceReferenceBuilder\<TEntity, TRelatedEntity>
+	- Microsoft.EntityFrameworkCore.Metadata.Builders.CollectionNavigationBuilder\<TEntity, TRelatedEntity>
+	- Microsoft.EntityFrameworkCore.DbContext
+	- Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade
+	- Microsoft.EntityFrameworkCore.DbSet\<TEntity>
+	- and many more ...
 
 **Database provider-specific**:
 
 - Assembly : Microsoft.EntityFrameworkCore.SqlServer
-	- Class : Microsoft.EntityFrameworkCore.SqlServerKeyBuilderExtensions
+	- Microsoft.EntityFrameworkCore.SqlServerDbContextOptionsExtensions
+	- Microsoft.EntityFrameworkCore.SqlServerKeyBuilderExtensions
+	- Microsoft.EntityFrameworkCore.SqlServerDbFunctionsExtensions (EF.Functions.xxx)
+
+# Database function mappings in EF Core
+
+Database functions within a query will be excuted within the database. EF Core supports three different ways of mapping between C# functions and database functions. 
+
+- **Built-in function mapping** - By default EF Core providers provide mappings for various built-in functions over primitive types. For example, String.ToLower() translates to LOWER in SqlServer. See documentation specific to each EF Data Provider.
+
+- **EF.Functions mapping** - Since not all database functions have equivalent C# functions, EF Core providers have **special C# methods** to invoke certain database functions. These methods are defined as extension methods over **EF.Functions** to be used in LINQ queries. See documentation specific to each EF Data Provider.
+
+- **User-defined function mapping** - This functionality is useful when there are user-defined functions in the database, which the user wants to invoke from their LINQ query. To do that, the functions need to be mapped to a CLR method during model configuration (**modelBuilder.HasDbFunction**). When translating the LINQ query to SQL, the user-defined function is called instead of the CLR function it has been mapped to.
+
 
 # Data Access Layer
 
 Note, all the entity classes and the DBContext class should be considered as components of the data access layer. These classes should not be treated as business components or view model components.
 
-The DBContext maintains an open database connection, and therefore, such connection should be managed accordingly. Open database connection should be closed as soon as possible once database operations have been completed.
+The DbContext represents a unit-of-work, therefore, need to dispose the DbContext soon once work is completed. Do not maintain a single DbContext for the whole application. DbContext does not maintains an open database connection after each query unless the code specifically opens the connection. Open database connection should be closed as soon as possible once unit-of-work is completed.
+
+# Database Operations
+
+The class **AdvWorkRepo** provide examples of various database execution methods using DbContext. The unit test project **AdvWorkTest** has methods to test these database operations.

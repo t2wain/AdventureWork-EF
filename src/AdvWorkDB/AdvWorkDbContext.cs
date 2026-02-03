@@ -1,4 +1,5 @@
-﻿using AdvWorkEntity.Entity;
+﻿using AdvWorkDB.OtherEntity;
+using AdvWorkEntity.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace AdvWorkDB
@@ -6,10 +7,6 @@ namespace AdvWorkDB
     #pragma warning disable CS8618
     public partial class AdvWorkDbContext : DbContext
     {
-        public AdvWorkDbContext()
-        {
-        }
-
         public AdvWorkDbContext(DbContextOptions<AdvWorkDbContext> options)
             : base(options)
         {
@@ -119,21 +116,70 @@ namespace AdvWorkDB
 
         #endregion
 
+        #region Stored Procedure
+
+        public DbSet<BillOfMaterialSP> BillOfMaterialSP { get; set; }
+        public DbSet<ContactInfoSP> ContactInfoSP { get; set; }
+
+        /// <summary>
+        /// Table-Value database function.
+        /// Allow to be used in a LINQ query.
+        /// </summary>
+        public IQueryable<ContactInfoSP> GetContactInformation(int personId)
+             => FromExpression(() => GetContactInformation(personId));
+
+        /// <summary>
+        /// User-defined function.
+        /// Allow to be used in a LINQ query.
+        /// </summary>
+        public int GetStock(int productId)
+            => throw new InvalidOperationException();
+
+        /// <summary>
+        /// Configure user-defined database stored procedures 
+        /// and functions and their return entity values
+        /// </summary>
+        protected void ConfigureFunction(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BillOfMaterialSP>(entity => entity.HasNoKey());
+            modelBuilder.Entity<ContactInfoSP>(entity => entity.HasNoKey());
+
+            modelBuilder.HasDbFunction(
+                    typeof(AdvWorkDbContext).GetMethod(
+                        nameof(GetContactInformation), [typeof(int)]
+                    )!
+                )
+                .HasName("ufnGetContactInformation");
+
+            modelBuilder.HasDbFunction(
+                    typeof(AdvWorkDbContext).GetMethod(nameof(GetStock), [typeof(int)])!)
+                .HasName("ufnGetStock");
+        }
+
+
+
+        #endregion
+
         // Unable to generate entity type for table 'Production.Document' since its primary key could not be scaffolded. Please see the warning messages.
         // Unable to generate entity type for table 'Production.ProductDocument' since its primary key could not be scaffolded. Please see the warning messages.
 
         #region Configuring Context
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseSqlServer("Name=ConnectionStrings:Default");
-                // read-only DBContext
-                optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-                optionsBuilder.EnableSensitiveDataLogging(false);
-            }
-        }
+        // DBContext pooling feature does not allow a default constructor
+        //public AdvWorkDbContext()
+        //{
+        //}
+
+        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        //{
+        //    if (!optionsBuilder.IsConfigured)
+        //    {
+        //        optionsBuilder.UseSqlServer("Name=ConnectionStrings:Default");
+        //        // read-only DBContext
+        //        optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+        //        optionsBuilder.EnableSensitiveDataLogging(false);
+        //    }
+        //}
 
         #endregion
 
@@ -141,6 +187,8 @@ namespace AdvWorkDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ConfigureFunction(modelBuilder);
+
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AdvWorkDbContext).Assembly);
 
             /*
